@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<script src='sql.js'></script>
+
+<script
+  src="https://code.jquery.com/jquery-3.3.1.min.js"
+  integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+  crossorigin="anonymous"></script>
+
+<script>
+$( document ).ready(function() {
+    console.log( "ready!" );
+
+    var sqlstr = "";
+    $('#load').click(function() {   
+        sqlstr = $("#sql_imput").text();
+        console.log(sqlstr);
+    });
+
+
+    $("#run").click(function() {
+        console.log( "Running..." );
+        // var sql = require('sql.js');
+        var sql = window.SQL;
+
+        // Create a database
+        // NOTE: You can also use new sql.Database(data) where
+        // data is an Uint8Array representing an SQLite database file
+        var db = new sql.Database();
+        db.run(sqlstr); // Run the query without returning anything
+
+        // Execute some sql
+        var res = db.exec("SELECT * FROM hello");
+        console.log(res);
+        /*
+        [
+            {columns:['a','b'], values:[[0,'hello'],[1,'world']]}
+        ]
+        */
+        dict_to_table(res[0]);
+
+        // Prepare an sql statement
+        var stmt = db.prepare("SELECT * FROM hello WHERE a=:aval AND b=:bval");
+
+        // Bind values to the parameters and fetch the results of the query
+        var result = stmt.getAsObject({':aval' : 1, ':bval' : 'world'});
+        console.log(result); // Will print {a:1, b:'world'}
+    }); 
+
+});
+   
+
+function dict_to_table(dict){
+    var column_names = "<thead><thead><tr>";
+    for(var i = 0; i < dict.columns.length; i++){
+        column_names += "<th>"+dict.columns[i]+"</th>";
+    }
+    column_names += "</tr></thead></thead>";
+
+    var column_values = "<tbody>";
+    for(var i = 0; i < dict.values.length; i++){
+        column_values += "<tr>";
+        for(var j = 0; j < dict.values[i].length; j++){
+            column_values += "<th>"+dict.values[i][j]+"</th>";
+        }
+        column_values += "</tr>";
+    }    
+    column_values += "</tbody>";
+    $('#result_table').append(column_names+column_values);
+}
+
+</script>
+</head>
+
+<body>
+
+    <textarea cols="40" rows="20" id="sql_imput">
+        CREATE TABLE hello (a int, b char);
+        INSERT INTO hello VALUES (0, 'hello');
+        INSERT INTO hello VALUES (1, 'world');   
+    </textarea>
+
+    <button id="load">load</button>
+    <button id="run">run</button>
+
+    <table id="result_table" border="1">
+
+    </table>
+</body>
+</html>
